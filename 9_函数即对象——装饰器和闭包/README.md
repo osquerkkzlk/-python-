@@ -151,5 +151,181 @@ def decorator(func):
 7. nonlocal 让你可以修改外层函数中的变量，而不是创建新变量，也就是说nonlocal会把变量标记为自由变量。
 6. 变量的种类即是不是局部变量在函数主体中是不能改变的。
 7. python没有程序全局作用域，只有模块全局作用域，每个py文件都是一个模块，不同模块之间的变量不进行互通。
-8. 
-3. 语法糖 : 是指编程语言中的某种功能的简化写法，他让代码更简洁易懂。
+8.语法糖 : 是指编程语言中的某种功能的简化写法，他让代码更简洁易懂。
+
+
+
+# 👍项目实战
+
+## ✅ 项目名称：**基于装饰器与闭包的可扩展运动控制系统**
+
+---
+
+### 🎯 项目目标
+
+构建一个用于小车/机械臂/电机的**控制命令调度系统**，具备以下特点：
+
+| 目标   | 说明                          |
+| ---- | --------------------------- |
+| 可扩展性 | 控制行为（如前进、转向、停止）可由装饰器动态扩展    |
+| 状态追踪 | 使用闭包实现控制状态（如方向、速度、时间等）的封装   |
+| 日志记录 | 用装饰器记录每一次控制指令调用及其执行情况       |
+| 调试模式 | 支持通过装饰器开启“模拟控制”而非真实运行（适合测试） |
+
+---
+
+## 📦 项目结构概览（逻辑模块）
+
+```text
+control_system/
+├── __init__.py
+├── controller.py         # 控制行为定义（被装饰的对象）
+├── decorators.py         # 所有装饰器定义
+├── state.py              # 使用闭包封装状态控制器
+├── simulator.py          # 模拟运行支持
+├── main.py               # 项目入口，组合各组件
+```
+
+---
+
+## 🔧 关键模块详解
+
+### 1️⃣ `state.py` – 控制状态闭包（函数工厂）
+
+```python
+def control_state():
+    speed = 0
+    direction = "stopped"
+
+    def get_set(command=None, value=None):
+        nonlocal speed, direction
+        if command == "set_speed":
+            speed = value
+        elif command == "set_direction":
+            direction = value
+        return {"speed": speed, "direction": direction}
+
+    return get_set
+```
+
+用法：
+
+```python
+state = control_state()
+state("set_speed", 10)
+print(state())  # {'speed': 10, 'direction': 'stopped'}
+```
+
+---
+
+### 2️⃣ `decorators.py` – 日志/调试/权限 装饰器
+
+```python
+from functools import wraps
+import time
+
+def log_command(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"[LOG] Executing: {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+
+def simulate_only(func):
+    @wraps(func)
+    def wrapper(*args, simulate=False, **kwargs):
+        if simulate:
+            print(f"[SIMULATION] {func.__name__} would run here.")
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+
+def timer(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        res = func(*args, **kwargs)
+        end = time.time()
+        print(f"[TIMER] {func.__name__} took {end - start:.3f}s")
+        return res
+    return wrapper
+```
+
+---
+
+### 3️⃣ `controller.py` – 控制指令定义（可被装饰）
+
+```python
+from decorators import log_command, simulate_only
+
+@log_command
+@simulate_only
+def move_forward(units):
+    print(f"🚗 Moving forward {units} units")
+
+@log_command
+@simulate_only
+def turn_left():
+    print("🔄 Turning left")
+
+@log_command
+@simulate_only
+def stop():
+    print("🛑 Stopping")
+```
+
+---
+
+### 4️⃣ `main.py` – 项目入口
+
+```python
+from controller import move_forward, turn_left, stop
+from state import control_state
+
+if __name__ == "__main__":
+    state = control_state()
+    state("set_speed", 5)
+    state("set_direction", "forward")
+    print(f"[STATE] Current: {state()}")
+
+    move_forward(10, simulate=True)
+    turn_left(simulate=True)
+    stop(simulate=True)
+```
+
+---
+
+## 🧠 核心知识点体现
+
+| 知识点      | 在哪里体现                                    |
+| -------- | ---------------------------------------- |
+| 闭包       | 用于封装速度/方向状态（`state.py`）                  |
+| 一等函数     | 函数被传递、返回、存储（如返回的闭包、装饰器工厂）                |
+| 装饰器      | 用于扩展函数行为（如日志记录、模拟执行、计时）                  |
+| nonlocal | 修改外层状态（速度、方向）                            |
+| 装饰器叠加    | 多个装饰器组合功能（`@log_command @simulate_only`） |
+
+---
+
+## 🚀 进阶拓展方向
+
+1. **引入 asyncio 协程机制**实现非阻塞调度；
+2. **与硬件平台（如 Arduino 或 Raspberry Pi）整合**；
+3. 增加权限控制装饰器（只能特定角色执行某些操作）；
+4. 增加 GUI 控制面板，调用控制器中的函数；
+5. 实现命令缓存与撤销机制（可通过闭包+列表实现）。
+
+---
+
+## ✅ 项目收获
+
+你将在这个项目中掌握：
+
+* 闭包和装饰器的真正实战价值；
+* Python 控制逻辑的可组合性；
+* 高可维护、可测试、可复用的系统构建方法；
+* 函数式编程与控制系统之间的深度联动。
+
+---
+
+如果你愿意，我可以为你搭建这个项目的**初始代码模板**，或者帮助你用 PyQt/Tkinter/Flask 做个控制面板。你想从哪部分先开始动手？
