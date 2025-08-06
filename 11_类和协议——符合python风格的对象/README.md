@@ -1,4 +1,10 @@
 # 一、构造函数
+---
+
+#  “If it looks like a duck, swims like a duck, and quacks like a duck,
+then it probably is a duck.” (本章节的核心 —— 只要行为像就可以被当作某个对象来使用)
+---
+
 ## 1、对比 @staticmethod 和 @classmethod
 
 | 特性      | `@staticmethod`        | `@classmethod`        |
