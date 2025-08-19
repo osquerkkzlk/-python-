@@ -58,7 +58,7 @@ class Player(JsonSerialable_Mixin,Log_Mixin):
         self.log(f"Created Player List {self.name}")
 
     @classmethod
-    def from_songs(cls,name,songs:list):
+    def from_songs(cls,name,songKs:list):
         playlist=cls(name)
         playlist.songs.extend(songs)
         playlist.log(f"Initalized with {len(songs)} songs")
